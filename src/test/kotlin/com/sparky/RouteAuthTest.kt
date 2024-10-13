@@ -1,5 +1,6 @@
 package com.sparky
 
+import io.ktor.client.engine.*
 import io.ktor.http.*
 import io.ktor.server.testing.*
 import io.ktor.client.request.*
@@ -19,17 +20,18 @@ class RouthAuthTest {
         val successMessage = "Hello world ! "
         application {
             install(Authentication) {
+                basic{}
                 routeAuth("custom-auth") {
-                    validate {
-                        val token = request.headers["Authorization"]
+                    validate { call ->
+                        val token = call.request.headers["Authorization"]
                         if (token == "valid-token") {
                             UserIdPrincipal("authorized-user")
                         } else {
                             null
                         }
                     }
-                    challenge {
-                        request.call.respond(HttpStatusCode.Unauthorized, errorMessage)
+                    challenge { call ->
+                        call.respond(HttpStatusCode.Unauthorized, errorMessage)
                     }
                 }
             }

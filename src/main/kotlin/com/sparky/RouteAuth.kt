@@ -6,8 +6,8 @@ import io.ktor.server.auth.*
 import io.ktor.server.response.*
 
 private val tokenAuthenticationChallengeKey: String = "RouteAuth"
-typealias RouthAuthValidationFunction = suspend ApplicationCall.() -> UserIdPrincipal?
-typealias RouthAuthChallengeFunction = suspend ApplicationCall.() -> Unit
+typealias RouthAuthValidationFunction = suspend (call: ApplicationCall) -> UserIdPrincipal?
+typealias RouthAuthChallengeFunction = suspend (call: ApplicationCall) -> Unit
 
 class RouthAuthProvider(config: Config) : AuthenticationProvider(config) {
     private val authenticationFunction = config.authenticationFunction
@@ -15,7 +15,6 @@ class RouthAuthProvider(config: Config) : AuthenticationProvider(config) {
 
     override suspend fun onAuthenticate(context: AuthenticationContext) {
         val call = context.call
-
         val principal = authenticationFunction(call)
         if (principal == null) {
             context.challenge(tokenAuthenticationChallengeKey, AuthenticationFailedCause.InvalidCredentials) { challenge, call ->
@@ -32,9 +31,8 @@ class RouthAuthProvider(config: Config) : AuthenticationProvider(config) {
             throw NotImplementedError("Validation function is not specified. Use tokenAuth { validate { ... } } to fix.")
         }
 
-        internal var challengeFunction: RouthAuthChallengeFunction = {
-            request.call.respond(HttpStatusCode.Unauthorized, "Authorization Failed")
-
+        internal var challengeFunction: RouthAuthChallengeFunction = { call ->
+            call.respond(HttpStatusCode.Unauthorized, "Authorization Failed")
         }
 
         fun validate(body: RouthAuthValidationFunction) {
